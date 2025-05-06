@@ -141,6 +141,7 @@ rm -f -r leatherman || { echo "Error: Failed to remove existing leatherman direc
 gh repo clone https://github.com/qaTestLimited/leatherman.git -- -b main || { echo "Error: Failed to clone leatherman repository"; exit 1; }
 
 # Delete/define aliases to zsh profile for leatherman scripts, force reload of zsh resource file
+touch ~/.zshrc
 sed -i '' '/alias q=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' alias"; exit 1; }
 echo "alias q='${githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'q' alias"; exit 1; }
 sed -i '' '/alias leatherman=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' alias"; exit 1; }
