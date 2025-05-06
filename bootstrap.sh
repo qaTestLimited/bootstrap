@@ -146,8 +146,10 @@ gh repo clone https://github.com/qaTestLimited/leatherman.git -- -b main || { ec
 touch ~/.zshrc
 sed -i '' '/alias q=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' alias"; exit 1; }
 echo "alias q='${githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'q' alias"; exit 1; }
+alias q="${githome}/production/leatherman/leatherman.sh"
 sed -i '' '/alias leatherman=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' alias"; exit 1; }
 echo "alias leatherman='${githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
+alias leatherman="${githome}/production/leatherman/leatherman.sh"
 source ~/.zshrc || { echo "Error: Failed to reload zsh configuration"; exit 1; }
 
 touch ${githome}/.repos || { echo "Error: Failed to create .repos file"; exit 1; }
