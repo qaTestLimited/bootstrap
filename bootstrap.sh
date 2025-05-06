@@ -37,6 +37,11 @@ if [[ -z "${githome}" ]]; then
     source ~/.leatherman_env
 fi
 
+mkdir -p ${githome}
+mkdir -p ${githome}/development
+mkdir -p ${githome}/staging
+mkdir -p ${githome}/production
+
 # Exit if the githome directory does not exist
 if [[ ! -d "${githome}" ]]; then
 	echo -e "\e[31mError: The githome folder does not exist: \e[0m ${githome}"
