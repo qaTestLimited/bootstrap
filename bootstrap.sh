@@ -11,13 +11,6 @@ if [[ -f ~/.leatherman_env ]]; then
     source ~/.leatherman_env
 fi
 
-# Parse the first command-line argument as the command, converting it to lowercase
-if [[ $# -gt 0 ]]; then
-    command=${1:l}; shift
-else
-    command=""
-fi
-
 # Check if the githome environment variable is set and valid, if not, unset it to trigger a prompt to the user (see below)
 if [[ -n "${githome}" ]]; then
     if [[ ! -d "${githome}" ]]; then
@@ -38,9 +31,6 @@ if [[ -z "${githome}" ]]; then
 fi
 
 mkdir -p ${githome}
-mkdir -p ${githome}/development
-mkdir -p ${githome}/staging
-mkdir -p ${githome}/production
 
 # Exit if the githome directory does not exist
 if [[ ! -d "${githome}" ]]; then
