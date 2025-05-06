@@ -87,20 +87,21 @@ echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...insta
 
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing brew packages\n"
 
-touch ~/myPackages.cfg || { echo "Error: Failed to create ~/myPackages.cfg"; exit 1; }
+brew_packages=(
+    envchain
+    gh
+    git
+    mas
+    pandoc
+)
 
-for file in "${installdir}/leathermanInstallPackages.cfg" ~/myPackages.cfg
-do
-    if [[ -f "$file" ]]; then
-        while IFS=' ' read -r package _
-        do
-            if [[ $package == \#* ]]; then
-                continue
-            fi
-            brew install $package || { echo "Error: Failed to install package $package"; exit 1; }
-        done < "$file"
+for package in "${brew_packages[@]}"; do
+    if [[ $package == \#* ]]; then
+        continue
     fi
+    brew install "$package" || { echo "Error: Failed to install package $package"; exit 1; }
 done
+
 
 # Authenticate with GitHub CLI
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...authenticating to GitHub\n"
