@@ -85,15 +85,15 @@ echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...insta
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "Error: Failed to install Homebrew"; exit 1; }
 
-if ! command -v brew &> /dev/null; then
+if ! which brew &> /dev/null; then
     echo "Homebrew is not in the PATH. Attempting to add it..."
     if [[ -f "/opt/homebrew/bin/brew" ]]; then
-        echo >> ~/.zprofile
-        echo `eval "$(/opt/homebrew/bin/brew shellenv)"` >> ~/.zprofile
+        touch ~/.zprofile
+        echo "$(/opt/homebrew/bin/brew shellenv)" >> ~/.zprofile
         eval "$(/opt/homebrew/bin/brew shellenv)"
     elif [[ -f "/usr/local/bin/brew" ]]; then
-        echo >> ~/.zprofile
-        echo `eval "$(/usr/local/bin shellenv)"` >> ~/.zprofile
+        touch ~/.zprofile
+        echo "$(/usr/local/bin shellenv)" >> ~/.zprofile
         eval "$(/usr/local/bin shellenv)"
     else
         echo "Error: Homebrew is not installed. Please install it first."
