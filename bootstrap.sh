@@ -124,9 +124,11 @@ done
 # Authenticate with GitHub CLI
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...authenticating to GitHub\n"
 
-gh auth login || { echo "Error: GitHub authentication failed"; exit 1; }
-gh auth status || { echo "Error: Failed to verify GitHub authentication"; exit 1; }
+if ! gh auth status > /dev/null 2>&1; then
+    gh auth login || { echo "Error: GitHub authentication failed"; exit 1; }
+fi
 
+gh auth status || { echo "Error: Failed to verify GitHub authentication"; exit 1; }
 # Setup GitHub current user configuration (global)
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...setting global git user details\n"
 
