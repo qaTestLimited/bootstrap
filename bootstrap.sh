@@ -111,6 +111,7 @@ brew_packages=(
     git
     mas
     pandoc
+    coreutils
 )
 
 for package in "${brew_packages[@]}"; do
