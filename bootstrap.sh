@@ -70,16 +70,6 @@ if [[ ! -d "${leatherman_githome}/${leatherman_account}" ]]; then
     error_exit "The leatherman_account folder does not exist or could not be created. Full path: ${leatherman_githome}/${leatherman_account}"
 fi
 
-# Warn if already run
-if [[ -f "${leatherman_githome}/.repos" ]]; then
-    echo -e "\n\e[1mWARNING:\e[0m Bootstrap has already been run. This script is typically only needed to install newer versions of tools or reauthenticate with GitHub."
-    read "proceed?Do you want to proceed with reinstallation? (y/n): "
-    if [[ "$proceed" != "y" ]]; then
-        echo -e "\nOperation canceled by the user."
-        exit 1
-    fi
-fi
-
 # Create GitHub folder structure
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...creating GitHub folder structure\n"
 
@@ -144,14 +134,14 @@ cd "${leatherman_githome}/${leatherman_account}/production" || error_exit "Faile
 if [[ -d leatherman ]]; then
     rm -rf leatherman || error_exit "Failed to remove existing leatherman directory"
 fi
-gh repo clone qaTestLimited/leatherman -- -b main || error_exit "Failed to clone leatherman repository"
+gh repo clone ${leatherman_account}/leatherman -- -b main || error_exit "Failed to clone leatherman repository"
 
 # Update aliases in zshrc
 touch ~/.zshrc
 sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' alias"; exit 1; }
-echo "leatherman() {source '${leatherman_githome}/qaTestLimited/${environment}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
+echo "leatherman() {source '${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
 sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' alias"; exit 1; }
-echo "q () {source '${leatherman_githome}/qaTestLimited/${environment}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
+echo "q () {source '${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
 
 
 source ~/.zshrc || error_exit "Failed to reload zsh configuration"
