@@ -148,12 +148,11 @@ gh repo clone qaTestLimited/leatherman -- -b main || error_exit "Failed to clone
 
 # Update aliases in zshrc
 touch ~/.zshrc
-sed -i '' '/alias q=/d' ~/.zshrc || error_exit "Failed to remove existing 'q' alias"
-echo "alias q='${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh'" >> ~/.zshrc || error_exit "Failed to add 'q' alias"
-alias q="${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh"
-sed -i '' '/alias leatherman=/d' ~/.zshrc || error_exit "Failed to remove existing 'leatherman' alias"
-echo "alias leatherman='${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh'" >> ~/.zshrc || error_exit "Failed to add 'leatherman' alias"
-alias leatherman="${leatherman_githome}/${leatherman_account}/production/leatherman/leatherman.sh"
+sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' alias"; exit 1; }
+echo "leatherman() {source '${leatherman_githome}/qaTestLimited/${environment}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
+sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' alias"; exit 1; }
+echo "q () {source '${leatherman_githome}/qaTestLimited/${environment}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
+
 
 source ~/.zshrc || error_exit "Failed to reload zsh configuration"
 
