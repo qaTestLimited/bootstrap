@@ -94,7 +94,7 @@ done
 # Install Xcode command line tools, brew, envchain, and other dependencies
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing Xcode command line tools\n"
 # Uncomment if needed
-xcode-select --install || error_exit "Failed to install Xcode command line tools"
+xcode-select --install 
 
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing brew\n"
 
