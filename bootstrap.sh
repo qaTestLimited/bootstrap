@@ -1,57 +1,79 @@
 #!/bin/zsh
 
 # Determine the directory where this script is located (used to prefix other scripts)
-leathermanhome=$(dirname "$0")
+leatherman_home=$(dirname "$0")
 
 # Display a header for the Leatherman tool
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m  Leatherman\n"
 
-# Source the environment file if it exists, this will define the githome variable (used to find the qaTestLimited repo folder)
-if [[ -f ~/.leatherman_env ]]; then
-    source ~/.leatherman_env
+# Source the environment file if it exists, this will define the leatherman_githome variable (used to find the qaTestLimited repo folder)
+if [[ -f ~/.leatherman ]]; then
+    source ~/.leatherman
 fi
 
-# Check if the githome environment variable is set and valid, if not, unset it to trigger a prompt to the user (see below)
-if [[ -n "${githome}" ]]; then
-    if [[ ! -d "${githome}" ]]; then
-        echo "The githome environment variable is set to a non-existent directory: ${githome}"
-        unset githome
+# Check if the leatherman_githome environment variable is set and valid, if not, unset it to trigger a prompt to the user (see below)
+if [[ -n "${leatherman_githome}" ]]; then
+    if [[ ! -d "${leatherman_githome}" ]]; then
+        echo "The leatherman_githome environment variable is set to a non-existent directory: ${leatherman_githome}"
+        unset leatherman_githome
     fi
 fi
 
-# Prompt the user to set githome if it is not already set
-if [[ -z "${githome}" ]]; then
-    read "githome?Enter the path to your qaTestLimited GitHub folder (default is ~/GitHub/qaTestLimited): " 
-    if [[ -z "${githome}" ]]; then
-        githome=~/GitHub/qaTestLimited
+# Check if the leatherman_account environment variable is set and valid, if not, unset it to trigger a prompt to the user (see below)
+if [[ -n "${leatherman_account}" ]]; then
+    if [[ ! -d "${leatherman_githome}/${leatherman_account}" ]]; then
+        echo "The leatherman_account environment variable (${leatherman_account}) is set to a non-existent directory.  Full path: ${leatherman_githome}/${leatherman_account}"
+        unset leatherman_account
     fi
-    # Save githome to a persistent file for future use
-    echo "export githome=${githome}" > ~/.leatherman_env
-    source ~/.leatherman_env
 fi
 
-mkdir -p ${githome}
+# Prompt the user to set leatherman_githome if it is not already set
+if [[ -z "${leatherman_githome}" ]]; then
+    read "leatherman_githome?Enter the path to your GitHub folder (default is ~/GitHub): " 
+    if [[ -z "${leatherman_githome}" ]]; then
+        leatherman_githome=~/GitHub
+    fi
+    # Save leatherman_githome to a persistent file for future use
+    echo "export leatherman_githome=${leatherman_githome}" > ~/.leatherman
+    echo "export leatherman_account=qaTestLimited" >> ~/.leatherman
+    echo "export leatherman_accounts={qaTestLimited}" >> ~/.leatherman
+    echo "export leatherman_repos='{\"qaTestLimited\":{\"production\":[\"leatherman\"]}}'"
+    source ~/.leatherman
+fi
 
-# Exit if the githome directory does not exist
-if [[ ! -d "${githome}" ]]; then
-	echo -e "\e[31mError: The githome folder does not exist: \e[0m ${githome}"
+mkdir -p ${leatherman_githome}
+
+# Exit if the leatherman_githome directory does not exist
+if [[ ! -d "${leatherman_githome}" ]]; then
+	echo -e "\e[31mError: The leatherman_githome folder does not exist: \e[0m ${leatherman_githome}"
     exit 1
 fi
 
-# Check if the .repos file exists in githome, this is an indication that the folder is set up correctly
-if [[ ! -f "${githome}/.repos" ]]; then
-	echo -e "\e[33mWarning: Your qaTest githome folder is not setup correctly\e[0m"
-    read "setup?Do you want to correct the setup of the qaTest githome folder? (y/n): "
+echo "leatherman_account set to qaTestLimited"
+leatherman_account="qaTestLimited"
+
+mkdir -p ${leatherman_githome}/${leatherman_account}
+
+# Exit if the leatherman_githome directory does not exist
+if [[ ! -d "${leatherman_githome}/${leatherman_account}" ]]; then
+	echo -e "\e[31mError: The leatherman_account folder does not exist.\e[0m Full path: ${leatherman_githome}/${leatherman_account}"
+    exit 1
+fi
+
+# Check if the .repos file exists in leatherman_githome, this is an indication that the folder is set up correctly
+if [[ ! -f "${leatherman_githome}/${leatherman_account}/.leatherman" ]]; then
+	echo -e "\e[33mWarning: Your qaTest leatherman_githome folder is not setup correctly\e[0m"
+    read "setup?Do you want to correct the setup of the qaTest leatherman_githome folder? (y/n): "
     if [[ "${setup}" == "y" ]]; then
         command="bootstrap"
     else
-        echo "\e[31mError: qaTest githome folder is not setup correctly.\e[0m"
+        echo "\e[31mError: qaTest leatherman_githome folder is not setup correctly.  Bootstrap process aborted.\e[0m"
         exit 1
     fi
 fi
 
 # Warn the user if the script has already been run
-if [[ -f ${leathermanhome}/.repos ]]; then
+if [[ -f ${leatherman_githome}/.repos ]]; then
     echo -e "\n\e[1mWARNING:\e[0m Bootstrap has already been run. This script is typically only needed to install newer versions of tools or reauthenticate with GitHub."
     read "proceed?Do you want to proceed with reinstallation? (y/n): "
     if [[ "$proceed" != "y" ]]; then
@@ -63,14 +85,14 @@ fi
 # Create GitHub folder structure for development
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...creating GitHub folder structure\n"
 
-mkdir -p ${githome}
-cd ${githome} || { echo "Error: Failed to navigate to directory ${githome}"; exit 1; }
+mkdir -p ${leatherman_githome}
+cd ${leatherman_githome} || { echo "Error: Failed to navigate to directory ${leatherman_githome}"; exit 1; }
 mkdir -p development staging production
 
 # Verify that the directories exist after the operation
 for dir in development staging production; do
-	if [[ ! -d "${githome}/${dir}" ]]; then
-		echo "Error: Directory '${githome}/${dir}' does not exist after the operation"
+	if [[ ! -d "${leatherman_githome}/${dir}" ]]; then
+		echo "Error: Directory '${leatherman_githome}/${dir}' does not exist after the operation"
 		exit 1
 	fi
 done
@@ -139,18 +161,19 @@ git config --global user.name "$(gh api 'https://api.github.com/user' | jq -r .n
 # Clone leatherman for access to utility scripts (production version)
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...setting up local install of leatherman\n"
 
-cd ${githome}/production || { echo "Error: Failed to navigate to production directory"; exit 1; }
+cd ${leatherman_githome}/production || { echo "Error: Failed to navigate to production directory"; exit 1; }
 rm -f -r leatherman || { echo "Error: Failed to remove existing leatherman directory"; exit 1; }
 gh repo clone https://github.com/qaTestLimited/leatherman.git -- -b main || { echo "Error: Failed to clone leatherman repository"; exit 1; }
 
 # Delete/define aliases to zsh profile for leatherman scripts, force reload of zsh resource file
 touch ~/.zshrc
 sed -i '' '/alias q=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' alias"; exit 1; }
-echo "alias q='${githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'q' alias"; exit 1; }
-alias q="${githome}/production/leatherman/leatherman.sh"
+echo "alias q='${leatherman_githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'q' alias"; exit 1; }
+alias q="${leatherman_githome}/production/leatherman/leatherman.sh"
 sed -i '' '/alias leatherman=/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' alias"; exit 1; }
-echo "alias leatherman='${githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
-alias leatherman="${githome}/production/leatherman/leatherman.sh"
+echo "alias leatherman='${leatherman_githome}/production/leatherman/leatherman.sh'" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
+alias leatherman="${leatherman_githome}/production/leatherman/leatherman.sh"
+
 source ~/.zshrc || { echo "Error: Failed to reload zsh configuration"; exit 1; }
 
-touch ${githome}/.repos || { echo "Error: Failed to create .repos file"; exit 1; }
+touch ${leatherman_githome}/.repos || { echo "Error: Failed to create .repos file"; exit 1; }
