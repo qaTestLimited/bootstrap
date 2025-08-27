@@ -5,5 +5,5 @@ Bootstrap is used to configure your local machine ready for working at qaTest Li
 To run bootstrap, there is no need to clone this repo.  Just run the following command:
 
 ```
-cd ~; /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/qaTestLimited/bootstrap/refs/heads/main/bootstrap.sh)"; source ~/.zshrc || { echo "Error: Failed to bootstrap"; exit 1; }
+cd ~; source <(curl -fsSL https://raw.githubusercontent.com/qaTestLimited/bootstrap/refs/heads/main/bootstrap.sh) || { echo "Error: Failed to bootstrap"; exit 1; }
 ```

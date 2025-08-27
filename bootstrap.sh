@@ -52,7 +52,7 @@ if [[ -z "${leatherman_githome}" ]]; then
     fi
     # Save leatherman_githome to persistent file
     leatherman_account="qaTestLimited"
-    leatherman_accounts='[{]"qaTestLimited"]'
+    leatherman_accounts='["qaTestLimited"]'
     leatherman_repos='{"qaTestLimited":{"production":["leatherman"]}}'
     export leatherman_account leatherman_accounts leatherman_repos leatherman_githome
 fi
@@ -144,4 +144,3 @@ echo "q () {source '${leatherman_githome}/${leatherman_account}/production/leath
 source ~/.zshrc || error_exit "Failed to reload zsh configuration"
 
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
-echo -e "\e[1m\e[31mNote:\e[0m Restart your shell or run 'source ~/.zshrc' to apply changes."
