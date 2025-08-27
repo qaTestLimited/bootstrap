@@ -19,10 +19,10 @@ install_brew_package() {
 # --- Script Start ---
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m  Bootstrap\n"
 
-# Source leatherman file if it exists
-if [[ -f ~/.leatherman ]]; then
-    source ~/.leatherman
-fi
+# # Source leatherman file if it exists
+# if [[ -f ~/.leatherman ]]; then
+#     source ~/.leatherman
+# fi
 
 # Validate leatherman_githome
 if [[ -n "${leatherman_githome}" ]]; then
@@ -51,13 +51,10 @@ if [[ -z "${leatherman_githome}" ]]; then
         leatherman_githome="$HOME/GitHub"
     fi
     # Save leatherman_githome to persistent file
-    {
-        echo "export leatherman_githome='${leatherman_githome}'"
-        echo "export leatherman_account='qaTestLimited'"
-        echo "export leatherman_accounts='{qaTestLimited}'"
-        echo "export leatherman_repos='{"qaTestLimited":{"production":["leatherman"]}}'"
-    } > ~/.leatherman
-    source ~/.leatherman
+    leatherman_account="qaTestLimited"
+    leatherman_accounts='[{]"qaTestLimited"]'
+    leatherman_repos='{"qaTestLimited":{"production":["leatherman"]}}'
+    export leatherman_account leatherman_accounts leatherman_repos leatherman_githome
 fi
 
 create_dir "${leatherman_githome}"
