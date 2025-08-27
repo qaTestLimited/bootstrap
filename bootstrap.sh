@@ -52,8 +52,8 @@ if [[ -z "${leatherman_githome}" ]]; then
     fi
     # Save leatherman_githome to persistent file
     leatherman_account="qaTestLimited"
-    leatherman_accounts='["qaTestLimited"]'
-    leatherman_repos='{"qaTestLimited":{"production":["leatherman"]}}'
+    leatherman_accounts='[\"qaTestLimited\"]'
+    leatherman_repos='{\"qaTestLimited\":{\"production\":[\"leatherman\"]}}'
     export leatherman_account leatherman_accounts leatherman_repos leatherman_githome
 fi
 
