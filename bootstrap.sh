@@ -144,3 +144,5 @@ echo "q () {source '${leatherman_githome}/${leatherman_account}/production/leath
 source ~/.zshrc || error_exit "Failed to reload zsh configuration"
 
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
+
+export | grep leatherman_
