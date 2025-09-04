@@ -28,6 +28,11 @@ if [[ -n "$1" ]]; then
 else
     env="production"
 fi
+if [[ -n "$1" ]]; then
+    env="$1"
+else
+    env="production"
+fi
 # Validate leatherman_githome
 if [[ -n "${leatherman_githome}" ]]; then
     if [[ ! -d "${leatherman_githome}" ]]; then
@@ -139,6 +144,10 @@ gh repo clone ${leatherman_account}/leatherman -- -b main || error_exit "Failed 
 
 # Update aliases in zshrc
 touch ~/.zshrc
+sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' function"; exit 1; }
+echo "leatherman() {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
+sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' function"; exit 1; }
+echo "q () {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
 sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' function"; exit 1; }
 echo "leatherman() {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
 sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' function"; exit 1; }
