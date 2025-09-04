@@ -145,4 +145,5 @@ source ~/.zshrc || error_exit "Failed to reload zsh configuration"
 
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
 
-export | grep leatherman_
+sed -i '' '/export leatherman_/d' ~/.zshrc
+export | grep 'leatherman_' | awk -F= '{print "export " $1"="$2}' >> ~/.zshrc
