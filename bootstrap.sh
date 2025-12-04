@@ -159,3 +159,8 @@ echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
 
 sed -i '' '/export leatherman_/d' ~/.zshrc
 export | grep 'leatherman_' | awk -F= '{print "export " $1"="$2}' >> ~/.zshrc
+
+touch ~/myAppstoreApps.cfg
+touch ~/myOtherApps.cfg
+touch ~/myVSCExtensions.cfg
+touch ~/myPackages.cfg 
