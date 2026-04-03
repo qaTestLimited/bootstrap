@@ -16,6 +16,30 @@ install_brew_package() {
     fi
 }
 
+qSetEnv() {
+    local key="$1"
+    local value="$2"
+    leatherman_env=$(echo "$leatherman_env" | jq --arg k "$key" --arg v "$value" '.[$k]=$v')
+}
+
+qGetEnv() {
+    # Usage: _leatherman_get_env_var key
+    local key="$1"
+    echo "$leatherman_env" | jq -r --arg k "$key" '.[$k]'
+}
+
+qSaveState() {
+    # Remove old exports
+    sed -i '' '/export leatherman_env=/d' ~/.zshrc
+    # Store the entire leatherman_env JSON as a single export, properly quoted
+    local json_escaped
+    json_escaped=$(printf '%s' "$leatherman_env" | jq -c .)
+    echo "export leatherman_env='$json_escaped'" >> ~/.zshrc
+    export leatherman_env="$json_escaped"
+}
+
+
+
 # --- Script Start ---
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m  Bootstrap\n"
 
@@ -159,3 +183,7 @@ echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
 
 sed -i '' '/export leatherman_/d' ~/.zshrc
 export | grep 'leatherman_' | awk -F= '{print "export " $1"="$2}' >> ~/.zshrc
+
+qSetEnv "githome" "${leatherman_githome}"
+qSetEnv "account" "${leatherman_account}"    
+qSaveState || error_exit "Failed to save leatherman environment state"
