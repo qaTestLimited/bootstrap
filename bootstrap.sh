@@ -24,7 +24,7 @@ qSetEnv() {
         leatherman='{}'
     fi
 
-    leatherman=$(echo "$leatherman" | jq -c --arg k "$key" --arg v "$value" '.[$k] = $v') || error_exit "Failed to set leatherman[$key]"
+    leatherman=$(echo "$leatherman" | jq -c --arg k "$key" --arg v "$value" '($k | split(".")) as $path | setpath($path; $v)') || error_exit "Failed to set leatherman[$key]"
 }
 
 qGetEnv() {
@@ -76,6 +76,30 @@ brew_packages=(envchain gh git mas pandoc coreutils)
 for package in "${brew_packages[@]}"; do
     if ! brew list --formula "$package" &>/dev/null; then
         brew install "$package" || error_exit "Failed to install Homebrew package: $package"
+    fi
+done
+
+read "qatest_github_user?Enter the GitHub user id to use for qaTest: "
+[[ -n "${qatest_github_user}" ]] || error_exit "GitHub user id is required"
+
+switch_attempts=0
+while true; do
+    current_login="$(gh api user -q .login 2>/dev/null)"
+    if [[ "$current_login" == "$qatest_github_user" ]]; then
+        break
+    fi
+
+    echo "Active GitHub account is '${current_login:-none}'. Switching to '${qatest_github_user}'..."
+    gh auth switch -u "$qatest_github_user" || error_exit "Failed to switch GitHub auth to '${qatest_github_user}'"
+
+    current_login="$(gh api user -q .login 2>/dev/null)"
+    if [[ "$current_login" == "$qatest_github_user" ]]; then
+        break
+    fi
+
+    switch_attempts=$((switch_attempts + 1))
+    if (( switch_attempts >= 3 )); then
+        error_exit "GitHub account '${qatest_github_user}' is not active after switching attempts"
     fi
 done
 
@@ -133,6 +157,8 @@ qSetEnv "githome" "${leatherman_githome}"
 qSetEnv "account" "${leatherman_account}"
 qSetEnv "environment" "${leatherman_environment}"    
 qSetEnv "home" "${leatherman_home}"    
+qSetEnv "repos.${leatherman_account}.github_user" "${qatest_github_user}"
+
 qSaveState || error_exit "Failed to save leatherman environment state"
 
 [[ -f "${leatherman_script}" ]] || error_exit "leatherman.sh not found at ${leatherman_script}"
