@@ -1,124 +1,63 @@
 #!/bin/zsh
 
-# --- Functions ---
+# --- bootstrap functions ---
 error_exit() {
     echo -e "\e[31mError: $1\e[0m"
     exit 1
+}
+
+require_command() {
+    local cmd="$1"
+    command -v "$cmd" >/dev/null 2>&1 || error_exit "Required command '$cmd' is not installed or not in PATH"
 }
 
 create_dir() {
     mkdir -p "$1" || error_exit "Failed to create directory $1"
 }
 
-install_brew_package() {
-    if ! brew list "$1" &>/dev/null; then
-        brew install "$1" || error_exit "Failed to install package $1"
-    fi
-}
-
 qSetEnv() {
     local key="$1"
     local value="$2"
-    leatherman_env=$(echo "$leatherman_env" | jq --arg k "$key" --arg v "$value" '.[$k]=$v')
+
+    # Ensure leatherman is valid JSON object before setting key/value
+    if [[ -z "$leatherman" ]] || ! echo "$leatherman" | jq -e . >/dev/null 2>&1; then
+        leatherman='{}'
+    fi
+
+    leatherman=$(echo "$leatherman" | jq -c --arg k "$key" --arg v "$value" '.[$k] = $v') || error_exit "Failed to set leatherman[$key]"
 }
 
 qGetEnv() {
     # Usage: _leatherman_get_env_var key
     local key="$1"
-    echo "$leatherman_env" | jq -r --arg k "$key" '.[$k]'
+    echo "$leatherman" | jq -r --arg k "$key" '.[$k]'
+}
+
+qLoadState() {
+    [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
 }
 
 qSaveState() {
-    # Remove old exports
-    sed -i '' '/export leatherman_env=/d' ~/.zshrc
-    # Store the entire leatherman_env JSON as a single export, properly quoted
+    [[ -f "$HOME/.zshrc" ]] || touch "$HOME/.zshrc" || error_exit "Failed to create ~/.zshrc"
+    sed -i '' '/export leatherman=/d' ~/.zshrc || error_exit "Failed to update ~/.zshrc"
     local json_escaped
-    json_escaped=$(printf '%s' "$leatherman_env" | jq -c .)
-    echo "export leatherman_env='$json_escaped'" >> ~/.zshrc
-    export leatherman_env="$json_escaped"
+    json_escaped=$(printf '%s' "$leatherman" | jq -c .) || error_exit "Failed to encode leatherman"
+    echo "export leatherman='$json_escaped'" >> ~/.zshrc
+    export leatherman="$json_escaped"
+    [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
 }
 
 
 
-# --- Script Start ---
 echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m  Bootstrap\n"
 
-# # Source leatherman file if it exists
-# if [[ -f ~/.leatherman ]]; then
-#     source ~/.leatherman
-# fi
-if [[ -n "$1" ]]; then
-    env="$1"
-else
-    env="production"
+if ! xcode-select -p &>/dev/null; then
+    echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing Xcode command line tools\n"
+    xcode-select --install
 fi
-if [[ -n "$1" ]]; then
-    env="$1"
-else
-    env="production"
-fi
-# Validate leatherman_githome
-if [[ -n "${leatherman_githome}" ]]; then
-    if [[ ! -d "${leatherman_githome}" ]]; then
-        echo "The leatherman_githome environment variable is set to a non-existent directory: ${leatherman_githome}"
-        unset leatherman_githome
-    fi
-fi
-
-# Validate leatherman_account
-if [[ -n "${leatherman_account}" ]]; then
-    if [[ ! -d "${leatherman_githome}/${leatherman_account}" ]]; then
-        echo "The leatherman_account environment variable (${leatherman_account}) was set to a non-existent account directory.  Full path: ${leatherman_githome}/${leatherman_account}"
-        leatherman_account="qaTestLimited"
-    fi
-    echo "The leatherman_account environment variable was set to '${leatherman_account}'.  Bootstrap sets it to 'qaTestLimited'"
-else
-    echo "The leatherman_account environment variable was not set.  Bootstrap sets it to 'qaTestLimited'"
-    leatherman_account="qaTestLimited"
-fi
-
-# Prompt for leatherman_githome if not set
-if [[ -z "${leatherman_githome}" ]]; then
-    read "leatherman_githome?Enter the path to your GitHub folder (default is ~/GitHub): "
-    if [[ -z "${leatherman_githome}" ]]; then
-        leatherman_githome="$HOME/GitHub"
-    fi
-    # Save leatherman_githome to persistent file
-    leatherman_account="qaTestLimited"
-    leatherman_accounts='["qaTestLimited"]'
-    leatherman_repos='{"qaTestLimited":{"production":["leatherman"]}}'
-    export leatherman_account leatherman_accounts leatherman_repos leatherman_githome
-fi
-
-create_dir "${leatherman_githome}"
-if [[ ! -d "${leatherman_githome}" ]]; then
-    error_exit "The leatherman_githome folder does not exist or could not be created: ${leatherman_githome}"
-fi
-
-create_dir "${leatherman_githome}/${leatherman_account}"
-if [[ ! -d "${leatherman_githome}/${leatherman_account}" ]]; then
-    error_exit "The leatherman_account folder does not exist or could not be created. Full path: ${leatherman_githome}/${leatherman_account}"
-fi
-
-# Create GitHub folder structure
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...creating GitHub folder structure\n"
-
-cd "${leatherman_githome}/${leatherman_account}" || error_exit "Failed to navigate to directory ${leatherman_githome}/${leatherman_account}"
-for dir in development staging production; do
-    create_dir "$dir"
-    if [[ ! -d "${leatherman_githome}/${leatherman_account}/${dir}" ]]; then
-        error_exit "Directory '${leatherman_githome}/${leatherman_account}/${dir}' does not exist after or could not be created"
-    fi
-done
-
-# Install Xcode command line tools, brew, envchain, and other dependencies
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing Xcode command line tools\n"
-# Uncomment if needed
-xcode-select --install 
-
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing brew\n"
 
 if ! command -v brew &>/dev/null; then
+    echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing brew\n"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || error_exit "Failed to install Homebrew"
     if [[ -f "/opt/homebrew/bin/brew" ]]; then
         touch ~/.zprofile
@@ -133,22 +72,20 @@ if ! command -v brew &>/dev/null; then
     fi
 fi
 
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...installing brew packages\n"
-
 brew_packages=(envchain gh git mas pandoc coreutils)
 for package in "${brew_packages[@]}"; do
-    install_brew_package "$package"
+    if ! brew list --formula "$package" &>/dev/null; then
+        brew install "$package" || error_exit "Failed to install Homebrew package: $package"
+    fi
 done
 
 # Authenticate with GitHub CLI
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...authenticating to GitHub\n"
 if ! gh auth status &>/dev/null; then
     gh auth login || error_exit "GitHub authentication failed"
 fi
-gh auth status || error_exit "Failed to verify GitHub authentication"
+#gh auth status || error_exit "Failed to verify GitHub authentication"
 
 # Setup GitHub current user configuration (global)
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...setting global git user details\n"
 user_email="$(gh api 'https://api.github.com/user' | jq -r .email)"
 user_name="$(gh api 'https://api.github.com/user' | jq -r .name)"
 if [[ -z "$user_email" || -z "$user_name" ]]; then
@@ -158,32 +95,53 @@ else
     git config --global user.name "$user_name" || error_exit "Failed to set Git user name"
 fi
 
-# Clone leatherman for access to utility scripts (production version)
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m ...setting up local install of leatherman\n"
-cd "${leatherman_githome}/${leatherman_account}/production" || error_exit "Failed to navigate to production directory"
-if [[ -d leatherman ]]; then
-    rm -rf leatherman || error_exit "Failed to remove existing leatherman directory"
+read "leatherman_githome?Enter the path to your GitHub folder (default is ~/GitHub): "
+if [[ -z "${leatherman_githome}" ]]; then
+    leatherman_githome="$HOME/GitHub"
 fi
-gh repo clone ${leatherman_account}/leatherman -- -b main || error_exit "Failed to clone leatherman repository"
+leatherman_account="qaTestLimited"
+leatherman_environment="production"
 
-# Update aliases in zshrc
-touch ~/.zshrc
-sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' function"; exit 1; }
-echo "leatherman() {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
-sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' function"; exit 1; }
-echo "q () {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
-sed -i '' '/^leatherman\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'leatherman' function"; exit 1; }
-echo "leatherman() {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'leatherman' alias"; exit 1; }
-sed -i '' '/^q\(\)/d' ~/.zshrc || { echo "Error: Failed to remove existing 'q' function"; exit 1; }
-echo "q () {source '${leatherman_githome}/${leatherman_account}/${env}/leatherman/leatherman.sh'}" >> ~/.zshrc || { echo "Error: Failed to add 'q' function"; exit 1; }
+for dir in development staging production; do
+    create_dir "${leatherman_githome}/${leatherman_account}/${dir}"
+    if [[ ! -d "${leatherman_githome}/${leatherman_account}/${dir}" ]]; then
+        error_exit "Directory '${leatherman_githome}/${leatherman_account}/${dir}' does not exist after or could not be created"
+    fi
+done
 
-source ~/.zshrc || error_exit "Failed to reload zsh configuration"
+cd "${leatherman_githome}/${leatherman_account}/${leatherman_environment}" || error_exit "Failed to navigate to directory ${leatherman_githome}/${leatherman_account}/${leatherman_environment}"
 
-echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m DONE"
+if [[ -d "leatherman" ]]; then
+    read "overwrite_existing?Existing 'leatherman' directory found. Remove and re-clone? [y/N]: "
+    if [[ "$overwrite_existing" == [yY] || "$overwrite_existing" == [yY][eE][sS] ]]; then
+        rm -rf "leatherman" || error_exit "Failed to remove existing leatherman directory"
+        gh repo clone "${leatherman_account}/leatherman" -- -b main || error_exit "Failed to clone leatherman repository"
+    else
+        echo "Using existing leatherman repo at ${leatherman_githome}/${leatherman_account}/${leatherman_environment}"
+    fi
+else
+    gh repo clone "${leatherman_account}/leatherman" -- -b main || error_exit "Failed to clone leatherman repository"
+fi
 
-sed -i '' '/export leatherman_/d' ~/.zshrc
-export | grep 'leatherman_' | awk -F= '{print "export " $1"="$2}' >> ~/.zshrc
+### Remove for production!!!!
+leatherman_environment="development"
+
+leatherman_home="${leatherman_githome}/${leatherman_account}/${leatherman_environment}/leatherman"
+leatherman_script="${leatherman_home}/leatherman.sh"
 
 qSetEnv "githome" "${leatherman_githome}"
-qSetEnv "account" "${leatherman_account}"    
+qSetEnv "account" "${leatherman_account}"
+qSetEnv "environment" "${leatherman_environment}"    
+qSetEnv "home" "${leatherman_home}"    
 qSaveState || error_exit "Failed to save leatherman environment state"
+
+[[ -f "${leatherman_script}" ]] || error_exit "leatherman.sh not found at ${leatherman_script}"
+
+echo "Running q use ${leatherman_environment}"
+(
+    cd "${leatherman_home}" || exit 1
+    source "${leatherman_script}" use ${leatherman_environment}
+) || error_exit "Failed to execute leatherman.sh (use ${leatherman_environment})"
+qLoadState()
+
+echo -e "\n\e[48;5;251m   \e[0m\e[48;5;103m   \e[0m\e[48;5;240m   \e[0m Bootstrap completed"
