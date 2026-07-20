@@ -15,37 +15,52 @@ create_dir() {
     mkdir -p "$1" || error_exit "Failed to create directory $1"
 }
 
-qSetEnv() {
-    local key="$1"
-    local value="$2"
-
-    # Ensure leatherman is valid JSON object before setting key/value
-    if [[ -z "$leatherman" ]] || ! echo "$leatherman" | jq -e . >/dev/null 2>&1; then
-        leatherman='{}'
-    fi
-
-    leatherman=$(echo "$leatherman" | jq -c --arg k "$key" --arg v "$value" '($k | split(".")) as $path | setpath($path; $v)') || error_exit "Failed to set leatherman[$key]"
-}
-
-qGetEnv() {
-    # Usage: _leatherman_get_env_var key
-    local key="$1"
-    echo "$leatherman" | jq -r --arg k "$key" '.[$k]'
-}
+export LEATHERMAN_STATE_FILE="$HOME/.config/leatherman/state.json"
 
 qLoadState() {
-    [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+  if [[ -f "$LEATHERMAN_STATE_FILE" ]]; then
+    export leatherman="$(cat "$LEATHERMAN_STATE_FILE")"
+  else
+    export leatherman='{}'
+  fi
 }
 
 qSaveState() {
-    [[ -f "$HOME/.zshrc" ]] || touch "$HOME/.zshrc" || error_exit "Failed to create ~/.zshrc"
-    sed -i '' '/export leatherman=/d' ~/.zshrc || error_exit "Failed to update ~/.zshrc"
-    local json_escaped
-    json_escaped=$(printf '%s' "$leatherman" | jq -c .) || error_exit "Failed to encode leatherman"
-    echo "export leatherman='$json_escaped'" >> ~/.zshrc
-    export leatherman="$json_escaped"
-    [[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+  mkdir -p "$(dirname "$LEATHERMAN_STATE_FILE")"
+  printf '%s' "$leatherman" | jq -c . > "$LEATHERMAN_STATE_FILE"
 }
+
+qSetEnv() {
+  local key_path="${1#.}"
+  local val="$2"
+  
+  # Initialize if variable is unset
+  : "${leatherman:={}}"
+
+  # Handle JSON literals (booleans, arrays, objects) vs standard strings
+  if echo "$val" | jq -e . >/dev/null 2>&1; then
+    leatherman=$(printf '%s' "$leatherman" | jq --arg path "$key_path" --argjson v "$val" \
+      'setpath($path | split("."); $v)')
+  else
+    leatherman=$(printf '%s' "$leatherman" | jq --arg path "$key_path" --arg v "$val" \
+      'setpath($path | split("."); $v)')
+  fi
+
+  # Auto-persist state to disk on every change
+  qSaveState
+}
+
+qGetEnv() {
+  local key_path="${1#.}"
+  
+  if [[ -z "$key_path" ]]; then
+    printf '%s' "$leatherman" | jq .
+  else
+    printf '%s' "$leatherman" | jq -r --arg path "$key_path" \
+      'getpath($path | split(".")) | if type=="array" or type=="object" then . else tostring end'
+  fi
+}
+
 
 
 
